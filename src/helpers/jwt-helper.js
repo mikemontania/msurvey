@@ -1,18 +1,20 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/user.model');
 
-const generarJWT = async (id) => { 
+const generarJWT = async (codUser) => {
+    console.log('generarJWT')
+    console.log(codUser)
     try {
-        const usuario = await User.findByPk(id, {
+        const user = await User.findByPk(codUser, {
             attributes: {
                 exclude: ['password']
             }
         });
 
         const payload = {
-            usuario
+            user
         };
-console.log(payload)
+        console.log(payload)
         const token = jwt.sign(payload, process.env.JWT_SECRET, {
             expiresIn: '24h'
         });

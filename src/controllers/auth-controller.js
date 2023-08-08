@@ -37,7 +37,7 @@ const updatePassword = async (req, res = response) => {
 
 const login = async (req, res = response) => {
     const { username, password } = req.body;
-console.log('***************')
+    console.log('***************')
     try {
         const userDB = await User.findOne({
             where: {
@@ -52,7 +52,7 @@ console.log('***************')
                 msg: 'User does not exist'
             });
         }
-
+        console.log(userDB)
         const validPassword = await bcryptjs.compare(password, userDB.password);
 
         if (!validPassword) {
@@ -62,7 +62,7 @@ console.log('***************')
             });
         }
 
-        const token = await generarJWT(userDB.id);
+        const token = await generarJWT(userDB.codUser);
 
         res.json({
             ok: true,
@@ -83,7 +83,7 @@ const renewToken = async (req, res = response) => {
         const tokenReq = req.headers.authorization.split(" ")[1];
         const { user } = jsonwebtoken.verify(tokenReq, process.env.JWT_SECRET);
 
-        const tokenNew = await generarJWT(user.coduser);
+        const tokenNew = await generarJWT(user.codUser);
 
         res.status(200).json({
             ok: true,

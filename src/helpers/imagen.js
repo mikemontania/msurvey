@@ -5,77 +5,70 @@ const User = require('../models/user.model');
 const Question = require('../models/question.model');
 const Answer = require('../models/answer.model');
 
-const uploadImage = async (req, res = response) => {
-    try {
-        if (!req.file) {
-            return res.status(400).json({
-                ok: false,
-                msg: 'No se proporcionó ninguna imagen'
-            });
-        }
-
-        const { entityId, entityType } = req.body; // Recibir el ID y tipo de entidad desde la solicitud
-
-        let entity;
-
-        switch (entityType) {
-            case 'user':
-                entity = await User.findByPk(entityId);
-                break;
-            case 'question':
-                entity = await Question.findByPk(entityId);
-                break;
-            case 'answer':
-                entity = await Answer.findByPk(entityId);
-                break;
-            default:
-                return res.status(400).json({
-                    ok: false,
-                    msg: 'Tipo de entidad no válido'
-                });
-        }
-
-        if (!entity) {
-            return res.status(404).json({
-                ok: false,
-                msg: 'Entidad no encontrada'
-            });
-        }
-
-        // Obtener la ruta de la carpeta para la entidad
-        const entityFolder = entityType === 'user' ? 'usuarios' : entityType === 'question' ? 'preguntas' : 'respuestas';
-
-        // Borrar imagen anterior si existe
-        if (entity.img) {
-            const imagePath = path.join(__dirname, `../uploads/${entityFolder}/${entity.img}`);
-            await fs.unlink(imagePath);
-        }
-
-        // Asignar nueva imagen a la entidad
-        entity.img = req.file.filename;
-        await entity.save();
-
-        res.status(200).json({
-            ok: true,
-            msg: `Imagen de ${entityType} actualizada`
-        });
-
-    } catch (error) {
-        console.log(error);
-        res.status(500).json({
-            ok: false,
-            msg: 'Error interno, verifique log'
-        });
-    }
-};
  
+
 const borrarImagen = (path) => {
     if (fs.existsSync(path)) {
-        // borrar la imagen anterior
+        // Borrar la imagen anterior
         fs.unlinkSync(path);
     }
 }
 
+const uploadImage = async (type, id, fileName) => {
+    try {
+        let oldPath = '';
+
+        switch (type) {
+            case 'questions':
+                const q = await Question.findByPk(id);
+                if (!q) {
+                    console.log('No es una pregunta por id');
+                    return false;
+                }
+
+                oldPath = `./uploads/questions/${q.img}`;
+                deleteImage(oldPath);
+                q.img = fileName;
+                await q.save();
+                return true;
+
+            case 'options':
+                const option = await Option.findByPk(id);
+                if (!option) {
+                    console.log('No es una opción por id');
+                    return false;
+                }
+
+                oldPath = `./uploads/options/${option.img}`;
+                deleteImage(oldPath);
+                option.img = fileName;
+                await option.save();
+                return true;
+
+            case 'users':
+                const user = await User.findByPk(id);
+                if (!user) {
+                    console.log('No es un usuario por id');
+                    return false;
+                }
+
+                oldPath = `./uploads/users/${user.img}`;
+                deleteImage(oldPath);
+                user.img = fileName;
+                await user.save();
+                return true;
+            
+            // Agregar más casos según sea necesario para otros tipos de actualizaciones
+
+            default:
+                console.log('Tipo no válido');
+                return false;
+        }
+    } catch (error) {
+        console.log(error);
+        return false;
+    }
+}
 const getImage = async (req, res = response) => {
     try {
         const userId = req.params.id; // Obtener el ID del usuario desde los parámetros de la URL

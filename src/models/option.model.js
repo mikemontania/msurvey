@@ -2,26 +2,26 @@ const { DataTypes, Model } = require('sequelize');
 const { sequelize } = require('../../dbconfig');
 const Question = require('./question.model');
 
-class Option extends Model {}
+class Option extends Model { }
 
 Option.init({
-  id: {
+  codOption: {
     type: DataTypes.INTEGER,
     primaryKey: true,
     autoIncrement: true,
-    allowNull: false
+    allowNull: false,
+    field: 'cod_option' // Nombre de columna en snake_case para la base de datos
   },
   optionText: {
     type: DataTypes.STRING,
-    allowNull: false
+    allowNull: false,
+    field: 'option_text' // Nombre de columna en snake_case para la base de datos
   }
 }, {
   sequelize,
   modelName: 'Option',
-  tableName: 'options',
+  tableName: 'options', // Nombre de tabla en plural y minúsculas
   timestamps: false
 });
-
-Option.belongsTo(Question, { as: "question",  foreignKey: 'question_id' }); // Relación con Pregunta
-
+ 
 module.exports = Option;

@@ -1,7 +1,7 @@
 const { Sequelize } = require('sequelize');
 
 const sequelize = new Sequelize(process.env.DB_CNN, {
-    logging: false, //default true
+    logging: true, //default true
     pool: {
         max: 5,
         idle: 30000,
@@ -12,12 +12,15 @@ const sequelize = new Sequelize(process.env.DB_CNN, {
 const dbConnection = async () => {
     try {
         await sequelize.authenticate();
-        // afecta la BD segun el modelo,
-        // el modelo debe declararse algun archivo .js
-        //crea si no existe
-         await sequelize.sync();
-         //destruye y vuelve a crear  
-       //  await sequelize.sync({ force: true });
+        
+        if(process.env.DB_INIT == 'true'){
+            //destruye y vuelve a crear  
+            await sequelize.sync({ force: true });
+        }else{
+            //solo crea
+            await sequelize.sync();
+        }
+        
         console.log('Conectado a la BD: %j', process.env.DB_CNN);
     } catch (error) {
         console.error(error);
