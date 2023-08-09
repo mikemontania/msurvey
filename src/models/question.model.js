@@ -22,6 +22,15 @@ Question.init({
     allowNull: false,
     field: 'question_type'
   },
+  obligatory: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false
+  },
+  amount : {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    field: 'amount'
+  },
   alignment: {
     type: DataTypes.STRING,
     allowNull: false,

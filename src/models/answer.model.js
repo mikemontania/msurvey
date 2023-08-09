@@ -22,15 +22,7 @@ Answer.init({
     allowNull: true,
     field: 'answer_text'
   },
-  obligatory: {
-    type: DataTypes.BOOLEAN,
-    allowNull: false
-  },
-  amount : {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-    field: 'amount'
-  },
+
   codQuestion: {
     type: DataTypes.INTEGER,
     allowNull: false,
