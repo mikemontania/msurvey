@@ -1,60 +1,42 @@
 const { DataTypes, Model } = require('sequelize');
 const { sequelize } = require('../../dbconfig');
-const Survey = require('./survey.model');
-const moment = require('moment'); 
- 
-class Question extends Model { }
+const Question = require('./question.model');
+const moment = require('moment');
 
-Question.init({
-  codQuestion: {
+class Choice extends Model { }
+
+Choice.init({
+  codChoice: {
     type: DataTypes.INTEGER,
     primaryKey: true,
     autoIncrement: true,
     allowNull: false,
     unique: true, 
-    field: 'cod_question',
+    field: 'cod_choice'
   },
-  questionText: {
-    type: DataTypes.STRING,
-    allowNull: false,
-    field: 'question_text'
-  },
-  questionType: {
-    type: DataTypes.STRING,
-    allowNull: false,
-    field: 'question_type'
-  },
-  obligatory: {
-    type: DataTypes.BOOLEAN,
-    allowNull: false
-  },
-  amount : {
-    type: DataTypes.INTEGER,
-    allowNull: true,
-    field: 'amount'
-  },
-  alignment: {
+  choiceType: {
     type: DataTypes.STRING,
     allowNull: true,
-    field: 'alignment'
+    field: 'choice_type'
   },
-  bold: {
+  choiceText: {
     type: DataTypes.STRING,
     allowNull: true,
-    field: 'bold'
+    field: 'choice_text'
   },
   img: {
     type: DataTypes.STRING,
-    allowNull: true
+    allowNull: true,
+    field: 'img'
   },
-  codSurvey: {
+  codQuestion: {
     type: DataTypes.INTEGER,
     allowNull: false,
-    field: 'cod_survey',
+    field: 'cod_question',
     references: {
-      model: Survey,
-      key: 'cod_survey'
-    }
+      model: Question, // Usa la instancia del modelo Question aquí
+      key: 'cod_question'
+    },
   },
   createdAt: {
     type: DataTypes.DATE,
@@ -82,8 +64,8 @@ Question.init({
   },
 }, {
   sequelize,
-  modelName: 'Question',
-  tableName: 'questions',
+  modelName: 'Choice',
+  tableName: 'choices',
   scopes: {
     withPassword: {
       attributes: {},
@@ -93,4 +75,5 @@ Question.init({
   underscored: true,
 });
 
-module.exports = Question;
+
+module.exports = Choice;

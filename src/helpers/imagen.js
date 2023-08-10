@@ -3,7 +3,7 @@ const path = require('path');
 const { response } = require('express');
 const User = require('../models/user.model');
 const Question = require('../models/question.model');
-const Answer = require('../models/answer.model');
+const Choice = require('../models/choice.model');
 
  
 

@@ -3,7 +3,8 @@ const { sequelize } = require('../../dbconfig');
 const User = require('./user.model');
 const Question = require('./question.model');
 const Survey = require('./survey.model');
-const Answer = require('./answer.model');
+const Choice = require('./choice.model');
+const moment = require('moment');
 
 class SurveyResponse extends Model { }
 
@@ -13,6 +14,7 @@ SurveyResponse.init({
         primaryKey: true,
         autoIncrement: true,
         allowNull: false,
+        unique: true, 
         field: 'cod_survey_response' // Nombre de columna en snake_case para la base de datos
     },
     codUser: {
@@ -30,10 +32,10 @@ SurveyResponse.init({
         allowNull: false,
         field: 'cod_question' // Nombre de columna en snake_case para la base de datos
     },
-    codAnswer: {
+    codChoice: {
         type: DataTypes.INTEGER,
         allowNull: false,
-        field: 'cod_answer' // Nombre de columna en snake_case para la base de datos
+        field: 'cod_choice' // Nombre de columna en snake_case para la base de datos
     },
     responses: {
         type: DataTypes.JSON, // O un tipo de dato adecuado para tus respuestas
@@ -76,9 +78,5 @@ SurveyResponse.init({
     underscored: true,
 });
 
-SurveyResponse.belongsTo(User, { as: "user", foreignKey: "cod_user" });
-SurveyResponse.belongsTo(Question, { as: "question", foreignKey: "cod_question" });
-SurveyResponse.belongsTo(Survey, { as: "survey", foreignKey: "cod_survey" });
-SurveyResponse.belongsTo(Answer, { as: "answer", foreignKey: "cod_answer" });
 
 module.exports = SurveyResponse;

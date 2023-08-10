@@ -20,9 +20,8 @@ const validarJWT = (req, res, next) => {
         const { user } = jsonwebtoken.verify(token, process.env.JWT_SECRET);
         
         // Asignar valores al objeto "req" para usar en rutas posteriores
-        req.userId = user.id;  // Cambio de "codUsuario" a "id"
-        req.username = user.username;
-        
+        req.user = user;   
+         
         next();
     } catch (error) {
         return res.status(401).json({

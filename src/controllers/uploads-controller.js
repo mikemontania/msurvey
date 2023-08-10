@@ -11,7 +11,7 @@ const fileUpload = async (req, res = response) => {
         const id = req.params.id;
 
         // Validar tipo
-        const tiposValidos = ['user', 'question', 'answer']; // Actualiza los tipos según tus necesidades
+        const tiposValidos = ['user', 'question', 'choice']; // Actualiza los tipos según tus necesidades
         if (!tiposValidos.includes(tipo)) {
             return res.status(400).json({
                 ok: false,

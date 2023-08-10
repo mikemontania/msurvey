@@ -1,7 +1,5 @@
 const { DataTypes, Model } = require('sequelize');
-const { sequelize } = require('../../dbconfig');
-const Question = require('./question.model');
-
+const { sequelize } = require('../../dbconfig'); 
 class Option extends Model { }
 
 Option.init({

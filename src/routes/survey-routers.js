@@ -10,7 +10,7 @@ const {
 
 const router = Router();
 // Ruta para obtener todas las encuestas con preguntas y opciones
-router.get('/list', getSurveys);
+router.get('/list', validarJWT,getSurveys);
 // Obtener una encuesta por ID
 router.get('/:id', validarJWT,  getSurveyById);
 // Ruta para crear una encuesta

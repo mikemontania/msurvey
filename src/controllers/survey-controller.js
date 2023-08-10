@@ -2,7 +2,10 @@ const { response } = require('express');
 const Survey = require('../models/survey.model');
 const Question = require('../models/question.model');
 const SurveyResponse = require('../models/surveyResponse.model');
-const Answer = require('../models/answer.model');
+const Choice = require('../models/choice.model');
+const { sequelize } = require('../../dbconfig');
+const associations = require('../models/associations'); // Aquí importas todas las exportaciones del archivo
+
 /**
  * {
   "title": "Encuesta de satisfacción",
@@ -11,7 +14,7 @@ const Answer = require('../models/answer.model');
     {
       "questionText": "¿Estás satisfecho con nuestro servicio?",
       "questionType": "multiple_choice",
-      "answers": ["Sí", "No"]
+      "choices": ["Sí", "No"]
     },
     {
       "questionText": "¿Qué aspecto te gustaría que mejoráramos?",
@@ -20,12 +23,14 @@ const Answer = require('../models/answer.model');
     {
       "questionText": "¿En una escala del 1 al 5, qué tan probable es que recomiendes nuestro producto?",
       "questionType": "rating",
-      "answers": ["1", "2", "3", "4", "5"]
+      "choices": ["1", "2", "3", "4", "5"]
     }
   ]
 }
  * * */
 const createSurvey = async (req, res) => {
+    const t = await sequelize.transaction(); // Iniciar una transacción
+
     try {
         const { title, description, questions } = req.body;
 
@@ -34,41 +39,57 @@ const createSurvey = async (req, res) => {
             title,
             description,
             creationDate: new Date(),
-            codUser: req.user.codUser // Cambiar al nombre correcto de la columna
-        });
+            codUser: req.user.codUser
+        }, { transaction: t });
 
-        // Crear preguntas y respuestas para la encuesta
         const createdQuestions = [];
 
         for (const questionData of questions) {
-            // Crear la pregunta
+            // Crear la pregunta dentro de la transacción
             const question = await Question.create({
                 questionText: questionData.questionText,
                 questionType: questionData.questionType,
-                codSurvey: survey.codSurvey // Cambiar al nombre correcto de la columna
-            });
+                obligatory: questionData.obligatory,
+                amount: questionData.amount,
+                alignment: questionData.alignment,
+                bold: questionData.bold,
+                codSurvey: survey.codSurvey
+            }, { transaction: t });
 
-            if (questionData.answers) {
-                for (const answerText of questionData.answers) {
-                    // Crear la respuesta asociada a la pregunta
-                    await Answer.create({
-                        answerText,
-                        codQuestion: question.codQuestion // Cambiar al nombre correcto de la columna
-                    });
+            if (questionData.choice && questionData.choice.length > 0) {
+                const createdChoices = [];
+
+                for (const choiceData of questionData.choice) {
+                    const choice = await Choice.create({
+                        choiceType: choiceData.choiceType,
+                        choiceText: choiceData.choiceText,
+                        codQuestion: question.codQuestion
+                    }, { transaction: t });
+
+                    createdChoices.push(choice);
                 }
+
+                if (createdChoices.length === 0) {
+                    throw new Error('At least one choice is required for each question.');
+                }
+            } else {
+                throw new Error('At least one choice is required for each question.');
             }
 
             createdQuestions.push(question);
         }
 
+        await t.commit(); // Confirmar la transacción
+
         res.status(201).json({
             success: true,
-            message: 'Survey created successfully with questions and answers',
+            message: 'Survey created successfully with questions and choices',
             survey,
             questions: createdQuestions
         });
     } catch (error) {
         console.error('Error creating survey:', error);
+        await t.rollback(); // Revertir la transacción en caso de error
         res.status(500).json({
             success: false,
             message: 'An error occurred while creating the survey',
@@ -77,18 +98,19 @@ const createSurvey = async (req, res) => {
     }
 };
 const getSurveyById = async (req, res) => {
-    const surveyId = req.params.id; // ID de la encuesta pasado como parámetro en la URL
-
+    const codSurvey = req.params.id;
     try {
-        const survey = await Survey.findByPk(surveyId, {
+        const Survey = associations.Survey;
+        const Question = associations.Question;
+
+        const survey = await Survey.findOne({
+            where: { cod_survey: codSurvey },
             include: [
                 {
                     model: Question,
-                    as: 'questions',
                     include: [
                         {
-                            model: Answer,
-                            as: 'answers'
+                            model: associations.Choice
                         }
                     ]
                 }
@@ -105,6 +127,8 @@ const getSurveyById = async (req, res) => {
         return res.status(500).json({ message: 'Error interno del servidor' });
     }
 };
+
+ 
 const updateSurvey = async (req, res) => {
     try {
         const surveyId = req.params.id; // Obtener el ID de la encuesta a actualizar
@@ -136,10 +160,10 @@ const updateSurvey = async (req, res) => {
                 codSurvey: surveyId
             });
 
-            if (questionData.answers) {
-                for (const answerText of questionData.answers) {
-                    await Answer.create({
-                        answerText,
+            if (questionData.choices) {
+                for (const choiceText of questionData.choices) {
+                    await Choice.create({
+                        choiceText,
                         codQuestion: question.codQuestion
                     });
                 }
@@ -234,10 +258,10 @@ const activateSurvey = async (req, res = response) => {
 
 const createSurveyResponse = async (req, res) => {
     try {
-        const { codUser, codSurvey, codQuestion, codAnswer, responses } = req.body;
+        const { codUser, codSurvey, codQuestion, codChoice, responses } = req.body;
 
         // Verificar si todos los campos necesarios están presentes
-        if (!codUser || !codSurvey || !codQuestion || !codAnswer || !responses) {
+        if (!codUser || !codSurvey || !codQuestion || !codChoice || !responses) {
             return res.status(400).json({
                 success: false,
                 message: 'Missing required fields'
@@ -249,7 +273,7 @@ const createSurveyResponse = async (req, res) => {
             codUser: codUser,
             codSurvey: codSurvey,
             codQuestion: codQuestion,
-            codAnswer: codAnswer,
+            codChoice: codChoice,
             responses
         });
 

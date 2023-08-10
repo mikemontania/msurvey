@@ -9,6 +9,7 @@ User.init({
     primaryKey: true,
     autoIncrement: true,
     allowNull: false,
+    unique: true, 
     field: 'cod_user' // Nombre de columna en snake_case para la base de datos
   },
   username: {

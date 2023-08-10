@@ -1,7 +1,7 @@
 const { DataTypes, Model } = require('sequelize');
 const { sequelize } = require('../../dbconfig');
 const User = require('./user.model');
-const Question = require('./question.model');
+ const moment = require('moment');
 
 class Survey extends Model { }
 
@@ -11,6 +11,7 @@ Survey.init({
     primaryKey: true,
     autoIncrement: true,
     allowNull: false,
+    unique: true, 
     field: 'cod_survey'
   },
   title: {
@@ -82,6 +83,5 @@ Survey.init({
 
 });
 
-Survey.belongsTo(User, { as: "user", foreignKey: "cod_user" });
 
 module.exports = Survey;
