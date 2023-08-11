@@ -1,82 +1,74 @@
-const { DataTypes, Model } = require('sequelize');
+const { DataTypes } = require('sequelize');
 const { sequelize } = require('../../dbconfig');
+const moment = require('moment');
 const User = require('./user.model');
 const Question = require('./question.model');
 const Survey = require('./survey.model');
 const Choice = require('./choice.model');
-const moment = require('moment');
 
-class SurveyResponse extends Model { }
-
-SurveyResponse.init({
+const SurveyResponse = sequelize.define('SurveyResponse', {
     codSurveyResponse: {
         type: DataTypes.INTEGER,
         primaryKey: true,
         autoIncrement: true,
-        allowNull: false,
-        unique: true, 
-        field: 'cod_survey_response' // Nombre de columna en snake_case para la base de datos
-    },
-    codUser: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        field: 'cod_user' // Nombre de columna en snake_case para la base de datos
-    },
-    codSurvey: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        field: 'cod_survey' // Nombre de columna en snake_case para la base de datos
-    },
-    codQuestion: {
-        type: DataTypes.INTEGER, // Cambiar al tipo de dato correcto
-        allowNull: false,
-        field: 'cod_question' // Nombre de columna en snake_case para la base de datos
-    },
-    codChoice: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        field: 'cod_choice' // Nombre de columna en snake_case para la base de datos
+        field: 'cod_survey_response', // Utiliza snake_case en la base de datos
     },
     responses: {
-        type: DataTypes.JSON, // O un tipo de dato adecuado para tus respuestas
-        allowNull: false
+        type: DataTypes.JSON,
+        allowNull: false,
     },
     createdAt: {
         type: DataTypes.DATE,
         allowNull: false,
         get() {
             return moment(this.getDataValue('createdAt')).format('YYYY-MM-DD HH:mm:ss');
-        }
+        },
+        field: 'created_at', // Utiliza snake_case en la base de datos
     },
     createdBy: {
-        allowNull: false,
         type: DataTypes.STRING,
-        defaultValue: 'AUTO_GENERADO'
+        allowNull: false,
+        defaultValue: 'AUTO_GENERADO',
+        field: 'created_by', // Utiliza snake_case en la base de datos
     },
     updatedAt: {
         type: DataTypes.DATE,
         allowNull: false,
         get() {
             return moment(this.getDataValue('updatedAt')).format('YYYY-MM-DD HH:mm:ss');
-        }
+        },
+        field: 'updated_at', // Utiliza snake_case en la base de datos
     },
     updatedBy: {
         type: DataTypes.STRING,
         allowNull: false,
-        defaultValue: 'AUTO_GENERADO'
+        defaultValue: 'AUTO_GENERADO',
+        field: 'updated_by', // Utiliza snake_case en la base de datos
     },
 }, {
-    sequelize,
-    modelName: 'SurveyResponse',
-    tableName: 'survey_responses', // Nombre de tabla en plural y minúsculas
-    scopes: {
-        withPassword: {
-            attributes: {},
-        }
-    },
+    tableName: 'surveys_responses', // Nombre de la tabla en snake_case
     timestamps: true,
-    underscored: true,
+   // Esto convierte los nombres de columnas de camelCase a snake_case
+   underscored: true,
+   // Esto convierte los nombres de modelos de pascalCase a snake_case
+   freezeTableName: true,
 });
 
+// Asociaciones de SurveyResponse
+SurveyResponse.belongsTo(User, {
+     foreignKey: { name: 'codUser', allowNull: false }, // Utiliza snake_case en la base de datos
+});
+
+SurveyResponse.belongsTo(Question, {
+     foreignKey: { name: 'codQuestion', allowNull: false }, // Utiliza snake_case en la base de datos
+});
+
+SurveyResponse.belongsTo(Survey, {
+     foreignKey: { name: 'codSurvey', allowNull: false }, // Utiliza snake_case en la base de datos
+});
+
+SurveyResponse.belongsTo(Choice, {
+     foreignKey: { name: 'codChoice', allowNull: false }, // Utiliza snake_case en la base de datos
+});
 
 module.exports = SurveyResponse;

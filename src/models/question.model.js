@@ -1,96 +1,93 @@
-const { DataTypes, Model } = require('sequelize');
+const { DataTypes } = require('sequelize');
 const { sequelize } = require('../../dbconfig');
+const moment = require('moment');
 const Survey = require('./survey.model');
-const moment = require('moment'); 
- 
-class Question extends Model { }
+const Choice = require('./choice.model');
 
-Question.init({
+const Question = sequelize.define('Question', {
   codQuestion: {
     type: DataTypes.INTEGER,
     primaryKey: true,
     autoIncrement: true,
-    allowNull: false,
-    unique: true, 
-    field: 'cod_question',
+    field: 'cod_question', // Utiliza snake_case en la base de datos
   },
   questionText: {
     type: DataTypes.STRING,
     allowNull: false,
-    field: 'question_text'
+    field: 'question_text', // Utiliza snake_case en la base de datos
   },
   questionType: {
     type: DataTypes.STRING,
     allowNull: false,
-    field: 'question_type'
+    field: 'question_type', // Utiliza snake_case en la base de datos
   },
   obligatory: {
     type: DataTypes.BOOLEAN,
-    allowNull: false
+    allowNull: false,
   },
-  amount : {
+  amount: {
     type: DataTypes.INTEGER,
     allowNull: true,
-    field: 'amount'
+    field: 'amount', // Utiliza snake_case en la base de datos
   },
   alignment: {
     type: DataTypes.STRING,
     allowNull: true,
-    field: 'alignment'
+    field: 'alignment', // Utiliza snake_case en la base de datos
   },
   bold: {
     type: DataTypes.STRING,
     allowNull: true,
-    field: 'bold'
+    field: 'bold', // Utiliza snake_case en la base de datos
   },
   img: {
     type: DataTypes.STRING,
-    allowNull: true
-  },
-  codSurvey: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-    field: 'cod_survey',
-    references: {
-      model: Survey,
-      key: 'cod_survey'
-    }
+    allowNull: true,
   },
   createdAt: {
     type: DataTypes.DATE,
     allowNull: false,
+    field: 'created_at', // Utiliza snake_case en la base de datos
     get() {
       return moment(this.getDataValue('createdAt')).format('YYYY-MM-DD HH:mm:ss');
-    }
+    },
   },
   createdBy: {
     allowNull: false,
     type: DataTypes.STRING,
-    defaultValue: 'AUTO_GENERADO'
+    defaultValue: 'AUTO_GENERADO',
+    field: 'created_by', // Utiliza snake_case en la base de datos
   },
   updatedAt: {
     type: DataTypes.DATE,
     allowNull: false,
+    field: 'updated_at', // Utiliza snake_case en la base de datos
     get() {
       return moment(this.getDataValue('updatedAt')).format('YYYY-MM-DD HH:mm:ss');
-    }
+    },
   },
   updatedBy: {
     type: DataTypes.STRING,
     allowNull: false,
-    defaultValue: 'AUTO_GENERADO'
+    defaultValue: 'AUTO_GENERADO',
+    field: 'updated_by', // Utiliza snake_case en la base de datos
   },
 }, {
-  sequelize,
-  modelName: 'Question',
-  tableName: 'questions',
-  scopes: {
-    withPassword: {
-      attributes: {},
-    }
-  },
+  tableName: 'questions', // Nombre de la tabla en snake_case
   timestamps: true,
-  underscored: true,
+ // Esto convierte los nombres de columnas de camelCase a snake_case
+ underscored: true,
+ // Esto convierte los nombres de modelos de pascalCase a snake_case
+ freezeTableName: true,
+});
+
+// Asociaciones de Question
+Question.hasMany(Choice, {
+   foreignKey: 'codQuestion', // Utiliza snake_case en la base de datos
+});
+
+Choice.belongsTo(Question, {
+  foreignKey: 'codQuestion', // Utiliza snake_case en la base de datos
 });
 
 module.exports = Question;

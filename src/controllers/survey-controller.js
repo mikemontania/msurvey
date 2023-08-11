@@ -4,7 +4,6 @@ const Question = require('../models/question.model');
 const SurveyResponse = require('../models/surveyResponse.model');
 const Choice = require('../models/choice.model');
 const { sequelize } = require('../../dbconfig');
-const associations = require('../models/associations'); // Aquí importas todas las exportaciones del archivo
 
 /**
  * {
@@ -30,9 +29,10 @@ const associations = require('../models/associations'); // Aquí importas todas 
  * * */
 const createSurvey = async (req, res) => {
     const t = await sequelize.transaction(); // Iniciar una transacción
-
+    console.log(req.user)
     try {
-        const { title, description, questions } = req.body;
+        const { title, description, Questions } = req.body;
+        console.log('Questions xxxx')
 
         // Crear la encuesta
         const survey = await Survey.create({
@@ -43,8 +43,10 @@ const createSurvey = async (req, res) => {
         }, { transaction: t });
 
         const createdQuestions = [];
+        console.log(Questions)
+        for (const questionData of Questions) {
+            console.log('let questionData:', questionData);
 
-        for (const questionData of questions) {
             // Crear la pregunta dentro de la transacción
             const question = await Question.create({
                 questionText: questionData.questionText,
@@ -55,19 +57,21 @@ const createSurvey = async (req, res) => {
                 bold: questionData.bold,
                 codSurvey: survey.codSurvey
             }, { transaction: t });
-
-            if (questionData.choice && questionData.choice.length > 0) {
+            console.log(question)
+            if (questionData.Choices && questionData.Choices.length > 0) {
                 const createdChoices = [];
 
-                for (const choiceData of questionData.choice) {
+                console.log('let question:', questionData);
+                for (const choiceData of questionData.Choices) {
                     const choice = await Choice.create({
                         choiceType: choiceData.choiceType,
                         choiceText: choiceData.choiceText,
-                        codQuestion: question.codQuestion
+                        codQuestion: question.dataValues.codQuestion
                     }, { transaction: t });
-
+                    console.log('createdChoices:', createdChoices);
                     createdChoices.push(choice);
                 }
+                console.log('createdChoices:', createdChoices);
 
                 if (createdChoices.length === 0) {
                     throw new Error('At least one choice is required for each question.');
@@ -97,20 +101,20 @@ const createSurvey = async (req, res) => {
         });
     }
 };
+
 const getSurveyById = async (req, res) => {
     const codSurvey = req.params.id;
     try {
-        const Survey = associations.Survey;
-        const Question = associations.Question;
+
 
         const survey = await Survey.findOne({
-            where: { cod_survey: codSurvey },
+            where: { codSurvey: codSurvey },
             include: [
                 {
                     model: Question,
                     include: [
                         {
-                            model: associations.Choice
+                            model: Choice
                         }
                     ]
                 }
@@ -128,14 +132,14 @@ const getSurveyById = async (req, res) => {
     }
 };
 
- 
+
 const updateSurvey = async (req, res) => {
     try {
-        const surveyId = req.params.id; // Obtener el ID de la encuesta a actualizar
+        const codSurvey = req.params.id; // Obtener el ID de la encuesta a actualizar
         const { title, description, questions } = req.body;
 
         // Buscar la encuesta existente por ID
-        const survey = await Survey.findByPk(surveyId);
+        const survey = await Survey.findByPk(codSurvey);
 
         if (!survey) {
             return res.status(404).json({ message: 'Encuesta no encontrada' });
@@ -148,7 +152,7 @@ const updateSurvey = async (req, res) => {
         });
 
         // Eliminar preguntas y respuestas existentes de la encuesta
-        await Question.destroy({ where: { codSurvey: surveyId } });
+        await Question.destroy({ where: { codSurvey: codSurvey } });
 
         // Crear nuevas preguntas y respuestas para la encuesta actualizada
         const updatedQuestions = [];
@@ -157,7 +161,7 @@ const updateSurvey = async (req, res) => {
             const question = await Question.create({
                 questionText: questionData.questionText,
                 questionType: questionData.questionType,
-                codSurvey: surveyId
+                codSurvey: codSurvey
             });
 
             if (questionData.choices) {
@@ -191,11 +195,12 @@ const getSurveys = async (req, res = response) => {
     try {
         const surveys = await Survey.findAll();
 
-        const surveysWithQuestions = [];
+        let surveysWithQuestions = [];
 
         for (const survey of surveys) {
+            console.log(survey)
             const questions = await Question.findAll({
-                where: { cod_survey: survey.codSurvey } // Cambiar el nombre de columna si es necesario
+                where: { cod_survey: survey.codSurvey }
             });
 
             const surveyWithQuestions = survey.toJSON();
