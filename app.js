@@ -30,7 +30,7 @@ app.use( '/msurvey/auth', require('./src/routes/auth-routes'));
 app.use( '/msurvey/user', require('./src/routes/user-routes'));
 app.use( '/msurvey/uploads', require('./src/routes/uploads-routes')); 
 app.use( '/msurvey/survey', require('./src/routes/survey-routers')); 
-
+app.use( '/msurvey/surveypb', require('./src/routes/public-router')); 
 app.listen( process.env.PORT, () => {
     console.log('Servidor corriendo en puerto ' + process.env.PORT );
 });

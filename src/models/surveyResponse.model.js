@@ -13,10 +13,19 @@ const SurveyResponse = sequelize.define('SurveyResponse', {
         autoIncrement: true,
         field: 'cod_survey_response', // Utiliza snake_case en la base de datos
     },
-    responses: {
-        type: DataTypes.JSON,
+    response: {
+        type: DataTypes.STRING,
         allowNull: false,
     },
+    type: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      choiceId: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        field: 'choice_id',
+      },
     createdAt: {
         type: DataTypes.DATE,
         allowNull: false,
