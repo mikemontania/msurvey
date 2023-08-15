@@ -102,6 +102,27 @@ const createSurvey = async (req, res) => {
     }
 };
 
+
+
+const createSurveyResponses = async (req, res) => {
+    const surveyResponses = req.body; // Array de surveyResponses
+  
+    try {
+      // Crea una transacción para garantizar la consistencia de la base de datos
+      await sequelize.transaction(async (transaction) => {
+        // Crea cada una de las surveyResponses
+        for (const response of surveyResponses) {
+          await SurveyResponse.create(response, { transaction });
+        }
+      });
+  
+      return res.status(201).json({ message: 'SurveyResponses creadas con éxito' });
+    } catch (error) {
+      console.error('Error al crear SurveyResponses:', error);
+      return res.status(500).json({ message: 'Error al crear SurveyResponses' });
+    }
+  };
+
 const getSurveyById = async (req, res) => {
     const codSurvey = req.params.id;
     try {
@@ -303,5 +324,6 @@ module.exports = {
     activateSurvey,
     getSurveyById,
     createSurveyResponse,
-    updateSurvey
+    updateSurvey,
+    createSurveyResponses
 };
