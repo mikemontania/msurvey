@@ -17,6 +17,10 @@ const SurveyResponse = sequelize.define('SurveyResponse', {
         type: DataTypes.STRING,
         allowNull: false,
     },
+    client: {
+        type: DataTypes.STRING,
+        allowNull: false,
+    },
     type: {
         type: DataTypes.STRING,
         allowNull: true,
