@@ -21,6 +21,11 @@ const Question = sequelize.define('Question', {
     allowNull: false,
     field: 'question_type', // Utiliza snake_case en la base de datos
   },
+  results: {
+    type: DataTypes.STRING, // O el tipo de datos adecuado para almacenar resultados
+    allowNull: true,
+    field: 'results', // Utiliza snake_case en la base de datos
+  },
   obligatory: {
     type: DataTypes.BOOLEAN,
     allowNull: false,

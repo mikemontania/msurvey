@@ -5,10 +5,14 @@ const {
     getSurveys,
     activateSurvey,
     getSurveyById,
-    updateSurvey
+    updateSurvey,
+    getSurveyResultsById
 } = require('../controllers/survey-controller');
 
 const router = Router();
+getSurveyResultsById
+// Ruta para obtener resultados
+router.get('/result/:id', validarJWT,getSurveyResultsById);
 // Ruta para obtener todas las encuestas con preguntas y opciones
 router.get('/list', validarJWT,getSurveys);
 // Obtener una encuesta por ID

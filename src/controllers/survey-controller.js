@@ -106,22 +106,22 @@ const createSurvey = async (req, res) => {
 
 const createSurveyResponses = async (req, res) => {
     const surveyResponses = req.body; // Array de surveyResponses
-  
+
     try {
-      // Crea una transacción para garantizar la consistencia de la base de datos
-      await sequelize.transaction(async (transaction) => {
-        // Crea cada una de las surveyResponses
-        for (const response of surveyResponses) {
-          await SurveyResponse.create(response, { transaction });
-        }
-      });
-  
-      return res.status(201).json({ message: 'SurveyResponses creadas con éxito' });
+        // Crea una transacción para garantizar la consistencia de la base de datos
+        await sequelize.transaction(async (transaction) => {
+            // Crea cada una de las surveyResponses
+            for (const response of surveyResponses) {
+                await SurveyResponse.create(response, { transaction });
+            }
+        });
+
+        return res.status(201).json({ message: 'SurveyResponses creadas con éxito' });
     } catch (error) {
-      console.error('Error al crear SurveyResponses:', error);
-      return res.status(500).json({ message: 'Error al crear SurveyResponses' });
+        console.error('Error al crear SurveyResponses:', error);
+        return res.status(500).json({ message: 'Error al crear SurveyResponses' });
     }
-  };
+};
 
 const getSurveyById = async (req, res) => {
     const codSurvey = req.params.id;
@@ -152,7 +152,196 @@ const getSurveyById = async (req, res) => {
         return res.status(500).json({ message: 'Error interno del servidor' });
     }
 };
+const getSurveyResultsById = async (req, res) => {
+    const codSurvey = req.params.id;
+    try {
+        const surveyData = await Survey.findOne({
+            where: { codSurvey: codSurvey },
+            include: [{ model: Question }],
+        });
+        if (!surveyData) {
+            return res.status(404).json({ message: 'Encuesta no encontrada' });
+        }
 
+        // Crear una copia personalizada del objeto surveyData sin incluir las propiedades problemáticas
+        let survey = {
+            codSurvey: surveyData.dataValues.codSurvey,
+            title: surveyData.dataValues.title,
+            description: surveyData.dataValues.description,
+            // Agrega las propiedades que necesites aquí
+            questions: [],
+        };
+
+        if (surveyData.dataValues && surveyData.dataValues.Questions) {
+            // Crear un array de promesas para todas las operaciones asincrónicas
+            const promises = surveyData.dataValues.Questions.map(async questionData => {
+                let question = {
+                    codQuestion: questionData.dataValues.codQuestion,
+                    questionText: questionData.dataValues.questionText,
+                    questionType: questionData.dataValues.questionType,
+                    // Agrega las propiedades que necesites aquí
+                    resultsText: null,
+                    resultChartChoices: null,
+                    resultChartValue: null,
+                    resultAverage: null,
+                };
+
+                switch (questionData.dataValues.questionType) {
+                    case 'INPUT':
+                    case 'TEXTAREA':
+                    case 'MAPA':
+                        question.resultsText = await getResultText(questionData.dataValues.codQuestion);
+                        break;
+                    case 'CHECKBOX':
+                    case 'RADIOBUTTON':
+                        question.resultChartChoices = await getResultChartChoices(questionData.dataValues.codQuestion);
+                        break;
+                    case 'RANGE':
+                    case 'CARITAS':
+                        question.resultChartValue = await getResultChartValue(questionData.dataValues.codQuestion);
+                        break;
+                    case 'STARS':
+                        question.resultAverage = await getResultAverage(questionData.dataValues.codQuestion);
+                        break;
+                    default:
+                        console.log('sin opcion')
+                        break;
+                }
+
+                return question;
+            });
+
+            // Esperar a que todas las operaciones asincrónicas se completen
+            const questionResults = await Promise.all(promises);
+
+            // Agregar los resultados al objeto survey
+            survey.questions = questionResults;
+        }
+
+        return res.status(200).json(survey);
+    } catch (error) {
+        console.error('Error al obtener la encuesta por ID:', error);
+        return res.status(500).json({ message: 'Error interno del servidor' });
+    }
+};
+
+
+const getResultText = async (codQuestion) => {
+    try {
+        const responses = await SurveyResponse.findAll({
+            where: { codQuestion: codQuestion },
+        });
+
+        return responses.map(response => {
+            return {
+                client: response.client,
+                data: response.response
+            };
+        });
+    } catch (error) {
+        console.error('Error al obtener las respuestas de texto:', error);
+        throw error;
+    }
+};
+const getResultChartChoices = async (codQuestion) => {
+    try {
+        const responses = await SurveyResponse.findAll({
+            where: { codQuestion: codQuestion },
+            attributes: ['response'],
+        });
+
+        // Función auxiliar para crear objetos de elección
+        const createChoiceObject = async (response) => {
+            const choiceID = +response.dataValues.response;
+            const choiceData = await Choice.findOne({ where: { codChoice: choiceID } });
+            if (choiceData) {
+                const choice = choiceData.dataValues;
+                return {
+                    id: choiceID,
+                    descripcion: choice.choiceText,
+                    cantidad: 1,
+                };
+            }
+            return null;
+        };
+
+        // Mapear las respuestas a objetos de elección y filtrar los valores nulos
+        const choiceObjects = await Promise.all(responses.map(createChoiceObject));
+        const validChoiceObjects = choiceObjects.filter((choiceObject) => choiceObject !== null);
+
+        // Agrupar objetos de elección por ID y sumar las cantidades
+        const result = {};
+        validChoiceObjects.forEach((choiceObject) => {
+            const { id, descripcion } = choiceObject;
+            if (!result[id]) {
+                result[id] = choiceObject;
+            } else {
+                result[id].cantidad++;
+            }
+        });
+
+        // Convertir el objeto result en un array de objetos
+        const resultArray = Object.values(result);
+
+        return resultArray;
+    } catch (error) {
+        console.error('Error al obtener los resultados de selección múltiple:', error);
+        throw error;
+    }
+};
+const getResultChartValue = async (codQuestion) => {
+    try {
+        const responses = await SurveyResponse.findAll({
+            where: { codQuestion: codQuestion },
+            attributes: ['response'],
+        });
+
+        // Usar reduce para contar las respuestas de cada valor
+        const result = responses.reduce((accumulator, response) => {
+            const value = response.response.toString();
+            const existingEntry = accumulator.find(entry => entry.descripcion === value);
+
+            if (existingEntry) {
+                existingEntry.cantidad++;
+            } else {
+                accumulator.push({ descripcion: value, cantidad: 1 });
+            }
+
+            return accumulator;
+        }, []);
+
+        return result;
+    } catch (error) {
+        console.error('Error al obtener los resultados de valor numérico:', error);
+        throw error;
+    }
+};
+
+const getResultAverage = async (codQuestion) => {
+    // para las estrellas creo que hay que obtener el promedio de surveyResponse.response
+    try {
+        const responses = await SurveyResponse.findAll({
+            where: { codQuestion: codQuestion },
+            attributes: ['response'],
+        });
+
+        // Calcular el promedio
+        const totalResponses = responses.length;
+        const totalValues = responses.reduce((sum, response) => sum + parseInt(response.response), 0);
+
+        if (totalResponses === 0) {
+            return 0; // Evitar división por cero
+        }
+
+        const average = totalValues / totalResponses;
+        const roundedAverage = Math.round(average); // Redondear al valor entero más cercano
+
+        return roundedAverage;
+    } catch (error) {
+        console.error('Error al obtener el promedio de respuestas de estrellas:', error);
+        throw error;
+    }
+};
 
 const updateSurvey = async (req, res) => {
     try {
@@ -325,5 +514,6 @@ module.exports = {
     getSurveyById,
     createSurveyResponse,
     updateSurvey,
-    createSurveyResponses
+    createSurveyResponses,
+    getSurveyResultsById
 };
